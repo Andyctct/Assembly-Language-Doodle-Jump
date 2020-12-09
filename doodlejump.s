@@ -14,7 +14,7 @@
 #
 # Which milestone is reached in this submission?
 # (See the assignment handout for descriptions of the milestones)
-# - Milestone 1
+# - Milestone 3
 #
 # Which approved additional features have been implemented?
 # (See the assignment handout for the list of additional features)
@@ -29,9 +29,8 @@
 #####################################################################
 
 #TODO
-# Maybe add more random platform generator by saving 2 screens worth of random platforms, then cycling through it while adding new screens? 
-# Implement offbound action
-# right now if doodler is moving up and hits a platform he automatically recieves that platforms jump boost
+# Maybe add more randomness to platform generator
+# Maybe change offbound action to same row wrapping
 
 .data
 	displayAddress: .word 0x10008000 # top left pixel  
@@ -50,6 +49,7 @@
 	jumpTime: .word 0x40000004 # how many units the doodler has of its jump left  
 	halfScreen: .word 0x44444444 # stores row 15 of the screen, if the doodler is here, it stops moving and platforms start moving 
 	deathRow: .word 0x60000000 # stores the first pixel of the bottom row of the screen, the death row for the doodler
+	score: .word 0x64000000 # stores the score of the player
 	
 .text
 	lw $t0, displayAddress # $t0 stores the base address for display
@@ -60,7 +60,7 @@
 	li $t3, 0x2f4f4f # $t3 stores the dark slate gray colour code for the platforms
 	sw $t3, platformColour 
 	
-	# initialize column multiplier, row multiplier, half screen, and death row constants
+	# initialize column multiplier, row multiplier, half screen, and death row constants 
 	addi $t6, $zero, 4
 	sw $t6, columnMultiplier
 	addi $t6, $zero, 128 
@@ -77,38 +77,42 @@
 	mflo $t6
 	add $t6, $t6, $t0
 	sw $t6, deathRow 
-	# initialize up movement for the starting doodler
+
+restart:      jal draw_start_screen
+start_screen: lw $t8, 0xffff0000 # load whether the key was pressed, 1 if pressed, 0 if no
+              beq $t8, 1, start_check # if a key was pressed check if it was the start button
+              j start_screen # keep checking for a key press
+ start_check: lw $t7, 0xffff0004 # load the ascii code of the pressed key if any
+              beq $t7, 115, start_sequence # go to starting sequence if start key is pressed
+              j start_screen # keep waiting for the start key to be pressed
+		
+start_sequence:		
+	# initialize up movement for the starting doodler and score of the player
+	sw $zero, score
 	addi $t6, $zero, 25
 	sw $t6, jumpTime
 
+	# draw the sky
+	jal draw_sky 
 	
-	#start screen of some sort?
-start_screen: lw $t7, 0xffff0004 # load the ascii code of the pressed key if any
-              beq $t7, 115, start_sequence	
-              j start_screen
-              
-start_sequence:				
-	# paint the sky
-	jal paint_sky 
-	
-        # paint the starting platforms 
+        # draw the starting platforms 
         addi $a2, $zero, 1 # pass the max range of the rows to be y, rng is exclusive
         addi $a3, $zero, 31  # pass the row range to be x to x + y, x in this case is 28 
-        jal paint_random_platform # paint the platform and return, then repeat for the other 3 starting platforms
+        jal draw_random_platform # draw the platform and return, then repeat for the other 3 starting platforms
         addi $a2, $zero, 1 
         addi $a3, $zero, 23
-        jal paint_random_platform
+        jal draw_random_platform
         addi $a2, $zero, 1
         addi $a3, $zero, 15
-        jal paint_random_platform
+        jal draw_random_platform
         addi $a2, $zero, 1 
         addi $a3, $zero, 7
-        jal paint_random_platform
+        jal draw_random_platform
         jal platforms_check
         
-        # paint the starting doodler                  	 
+        # draw the starting doodler                  	 
         addi $t7, $zero, 0 
-        sw $t2, 3644($t0) # paint the starting position doodler left head
+        sw $t2, 3644($t0) # draw the starting position doodler left head
         addi $t6, $t0, 3644 # store the doodler left head starting position address in t6
         sw $t6, doodlerArray($t7) # save the doodler left head starting position address in doodlerLeftHead
         addi $t7, $t7, 4 # move to the next part of the doodler in the doodler array
@@ -134,8 +138,8 @@ start_sequence:
         addi $t6, $t0, 3896 
         sw $t6, doodlerArray($t7)  
         addi $t7, $t7, 4                        
-        sw $t2, 3912($t0)
-        addi $t6, $t0, 3912 # doodler right lower body
+        sw $t2, 3912($t0) # doodler right lower body
+        addi $t6, $t0, 3912 
         sw $t6, doodlerArray($t7)
         addi $t7, $t7, 4                        
         sw $t2, 4028($t0) # doodler left foot
@@ -166,31 +170,34 @@ check_input: lw $t8, 0xffff0000	 # load whether the key was pressed, 1 if presse
              addi $a0, $zero, 128 # store moving down as argument
              ble $t6, 0, str8_down # if jump time is 0 or less, move doodler with argument down 
              addi $a0, $zero, -128 # store moving up as argument  
-  str8_down: beq $t8, 0, update_doodler # check if there was no input, if so then move doodler with up or down argument 
+  str8_down: beq $t8, 0, update_doodler # check if there was no input, if so then move doodler with up or down argument
              lw $t7, 0xffff0004 # load the ascii code of the pressed key
-             addi $a0, $zero, -12 # store the argument as moving left 
-             beq $t7, 106, update_doodler # jump to move doodler with left argument
-             addi $a0, $zero, 12 # store the argument as moving right 
-             beq $t7, 107, update_doodler # jump to move doodler with right argument 
+    check_j: beq $t7, 106, input_j # check if input is j
+    check_k: beq $t7, 107, input_k # check if input is k 
+             j update_doodler # if input is neither j or k, jump to move doodler with up or down argument 
+    input_j: addi $a0, $zero, -12 # store the argument as moving left 
+             j update_doodler # jump to move doodler with left argument
+    input_k: addi $a0, $zero, 12 # store the argument as moving right 
+             j update_doodler # jump to move doodler with right argument 
              
                                
         # Function for doodler movement, a0 dictates which direction to move in, 128 = down, -128 = up, -4 = left, 4 = right 
 update_doodler: addi $t7, $zero, 0 # index for the doodler array
 		lw $t6, doodlerArray($t7) # load the current left head address of the doodler into t6
-              	sw $t1, 0($t6) # paint over the current left head position of the doodler
+              	sw $t1, 0($t6) # draw over the current left head position of the doodler
               	add $t6, $t6, $a0 # update the address of the left head
               	sw $t6, doodlerArray($t7) # save the updated address of the left head  
         	addi $t7, $t7, 4 # move to the next part of the doodler in the doodler array
         	 
               	# pattern repeats for every part of the doodler
               	lw $t6, doodlerArray($t7) # doodler middle head
-              	beq $a0, 4, safe_right # check if doodler is moving right and if so skip next step to avoid painting over newly drawn unit
+              	beq $a0, 4, safe_right # check if doodler is moving right and if so skip next step to avoid drawing over newly drawn unit
               	sw $t1, 0($t6) 
     safe_right:	add $t6, $t6, $a0 
                	sw $t6, doodlerArray($t7)
               	addi $t7, $t7, 4
               	lw $t6, doodlerArray($t7) # doodler right head
-              	beq $a0, 4, safe_right_2 # check if doodler is moving right and if so skip next step to avoid painting over newly drawn unit
+              	beq $a0, 4, safe_right_2 # check if doodler is moving right and if so skip next step to avoid drawing over newly drawn unit
               	sw $t1, 0($t6) 
   safe_right_2:	add $t6, $t6, $a0 
   		sw $t6, doodlerArray($t7)
@@ -206,13 +213,13 @@ update_doodler: addi $t7, $zero, 0 # index for the doodler array
               	sw $t6, doodlerArray($t7)
               	addi $t7, $t7, 4
               	lw $t6, doodlerArray($t7) # doodler left lower body
-              	beq $a0, 128, safe_down # check if doodler is moving down and if so skip next step to avoid painting over newly drawn unit
+              	beq $a0, 128, safe_down # check if doodler is moving down and if so skip next step to avoid drawing over newly drawn unit
               	sw $t1, 0($t6) 
      safe_down:	add $t6, $t6, $a0 
      		sw $t6, doodlerArray($t7)
               	addi $t7, $t7, 4
               	lw $t6, doodlerArray($t7) # doodler right lower body
-              	beq $a0, 128, safe_down_2 # check if doodler is moving down and if so skip next step to avoid painting over newly drawn unit
+              	beq $a0, 128, safe_down_2 # check if doodler is moving down and if so skip next step to avoid drawing over newly drawn unit
               	sw $t1, 0($t6) 
    safe_down_2:	add $t6, $t6, $a0
    		sw $t6, doodlerArray($t7)    
@@ -227,15 +234,249 @@ update_doodler: addi $t7, $zero, 0 # index for the doodler array
               	add $t6, $t6, $a0 
               	sw $t6, doodlerArray($t7)
               	jr $ra 
+              	
+draw_start_screen: lw $t4, displayAddress  # initialize t4 which stores the address for the pixel of the background that we are currently drawing 
+                   addi $t6, $zero, 0x1AE867   
+ next_pixel_start: beq $t4, 268472320, title_images #268472320 from display address plus 4096 (32 rows times 32 4 byte colours per row) 
+                   sw $t6, 0($t4) # draw this address' pixel deep sky blue
+                   addi $t4, $t4, 4 # update the address in t4 to the next pixel
+                   j next_pixel_start
+     title_images: # draw the starting doodler                  	 
+                   sw $t2, 3644($t0) # draw the starting position doodler left head
+                   # pattern repeats for every part of the doodler
+                   sw $t2, 3648($t0) # doodler middle head
+                   sw $t2, 3652($t0) # doodler right head                    
+                   sw $t2, 3768($t0) # doodler left upper body         
+                   sw $t2, 3784($t0) # doodler right upper body 
+                   sw $t2, 3896($t0) # doodler left lower body         
+                   sw $t2, 3912($t0) # doodler right lower body                
+                   sw $t2, 4028($t0) # doodler left foot
+                   sw $t2, 4036($t0) # doodler right foot
+                    
+                   # write out the doodler jump title words 
+                   addi $t6, $zero, 0xE81AA0
+                   # draw out D
+                   sw $t6, 644($t0)
+                   sw $t6, 648($t0)
+                   sw $t6, 652($t0)
+                   sw $t6, 784($t0)
+                   sw $t6, 912($t0)
+                   sw $t6, 1040($t0)
+                   sw $t6, 1164($t0)
+                   sw $t6, 1160($t0)
+                   sw $t6, 1156($t0)
+                   sw $t6, 1028($t0)
+                   sw $t6, 900($t0)     
+                   sw $t6, 772($t0)
+                   
+                   # draw out O twice
+                   sw $t6, 668($t0)
+                   sw $t6, 672($t0)    
+                   sw $t6, 676($t0)
+                   sw $t6, 792($t0)
+                   sw $t6, 920($t0)
+                   sw $t6, 1048($t0)
+                   sw $t6, 1180($t0)
+                   sw $t6, 1184($t0)
+                   sw $t6, 1188($t0)
+                   sw $t6, 808($t0)
+                   sw $t6, 936($t0)
+                   sw $t6, 1064($t0)
+                    
+                   sw $t6, 692($t0)
+                   sw $t6, 696($t0)    
+                   sw $t6, 700($t0)
+                   sw $t6, 816($t0)
+                   sw $t6, 944($t0)
+                   sw $t6, 1072($t0)
+                   sw $t6, 1204($t0)
+                   sw $t6, 1208($t0)
+                   sw $t6, 1212($t0)
+                   sw $t6, 832($t0)
+                   sw $t6, 960($t0)
+                   sw $t6, 1088($t0)
+                    
+                   # draw out D again
+                   sw $t6, 712($t0)
+                   sw $t6, 716($t0)
+                   sw $t6, 720($t0)
+                   sw $t6, 852($t0)
+                   sw $t6, 980($t0)
+                   sw $t6, 1108($t0)
+                   sw $t6, 1232($t0)
+                   sw $t6, 1228($t0)
+                   sw $t6, 1224($t0)
+                   sw $t6, 1096($t0)
+                   sw $t6, 968($t0)     
+                   sw $t6, 840($t0)
+                   
+                   # draw out L
+                   sw $t6, 1244($t0)
+                   sw $t6, 1116($t0)
+                   sw $t6, 988($t0)     
+                   sw $t6, 860($t0)
+                   sw $t6, 732($t0)
+                   sw $t6, 1248($t0)
+                   sw $t6, 1252($t0)
+                   sw $t6, 1256($t0)
+                   
+                   # draw out E
+                   sw $t6, 1264($t0)
+                   sw $t6, 1136($t0)
+                   sw $t6, 1008($t0)     
+                   sw $t6, 880($t0)
+                   sw $t6, 752($t0)
+                   sw $t6, 756($t0)
+                   sw $t6, 760($t0)
+                   sw $t6, 1012($t0)
+                   sw $t6, 1016($t0)               
+                   sw $t6, 1268($t0)
+                   sw $t6, 1272($t0)
+                   
+                   # draw out J
+                   #sw $t6, 1444($t0)
+                   sw $t6, 1444($t0)
+                   sw $t6, 1572($t0)
+                   sw $t6, 1700($t0)
+                   sw $t6, 1828($t0)
+                   sw $t6, 1952($t0)
+                   sw $t6, 1948($t0)
+                   sw $t6, 1816($t0)
+                    
+                   # draw out U                    
+                   sw $t6, 1452($t0)
+                   sw $t6, 1580($t0)
+                   sw $t6, 1708($t0)
+                   sw $t6, 1836($t0)
+                   sw $t6, 1968($t0)
+                   sw $t6, 1972($t0)
+                   sw $t6, 1572($t0)
+                   sw $t6, 1700($t0)
+                   sw $t6, 1464($t0)
+                   sw $t6, 1592($t0)
+                   sw $t6, 1720($t0)
+                   sw $t6, 1848($t0)
+                   sw $t6, 1572($t0)
+                   sw $t6, 1700($t0)
+                   
+                   # draw out M
+                   sw $t6, 1472($t0)
+                   sw $t6, 1600($t0)
+                   sw $t6, 1728($t0)
+                   sw $t6, 1856($t0)
+                   sw $t6, 1984($t0)
+                   sw $t6, 1604($t0)
+                   sw $t6, 1736($t0)
+                   sw $t6, 1612($t0)
+                   sw $t6, 1488($t0)
+                   sw $t6, 1616($t0)
+                   sw $t6, 1744($t0)
+                   sw $t6, 1872($t0)
+                   sw $t6, 2000($t0)
+                   
+                   # draw out P
+                   sw $t6, 1496($t0)
+                   sw $t6, 1624($t0)
+                   sw $t6, 1752($t0)
+                   sw $t6, 1880($t0)
+                   sw $t6, 2008($t0)
+                   sw $t6, 1500($t0)
+                   sw $t6, 1504($t0)
+                   sw $t6, 1636($t0)
+                   sw $t6, 1760($t0)
+                   sw $t6, 1756($t0)
+                                        
+                   jr $ra
+                   
+draw_end_screen: lw $t4, displayAddress  # initialize t4 which stores the address for the pixel of the background that we are currently drawing 
+                 addi $t6, $zero, 0xB81818 
+ next_pixel_end: beq $t4, 268472320, ending_images #268472320 from display address plus 4096 (32 rows times 32 4 byte colours per row) 
+                 sw $t6, 0($t4) # draw this address' pixel deep sky blue
+                 addi $t4, $t4, 4 # update the address in t4 to the next pixel
+                 j next_pixel_end
+  ending_images: # draw a greyed out starting doodler
+                 addi $t6, $zero, 0xC8B9AA                  	 
+                 sw $t6, 3644($t0) # draw the starting position doodler left head
+                 # pattern repeats for every part of the doodler
+                 sw $t6, 3648($t0) # doodler middle head
+                 sw $t6, 3652($t0) # doodler right head                    
+                 sw $t6, 3768($t0) # doodler left upper body         
+                 sw $t6, 3784($t0) # doodler right upper body 
+                 sw $t6, 3896($t0) # doodler left lower body         
+                 sw $t6, 3912($t0) # doodler right lower body                
+                 sw $t6, 4028($t0) # doodler left foot
+                 sw $t6, 4036($t0) # doodler right foot
+                 
+                 # draw the ending background, death face and gg 
+                 addi $t6, $zero, 0xE7CD14 # colour for gg
+                 # draw the x eyes
+                 sw $zero, 436($t0)
+                 sw $zero, 560($t0)   
+                 sw $zero, 684($t0)
+                 sw $zero, 692($t0)
+                 sw $zero, 428($t0)   
+                 sw $zero, 460($t0) 
+                 sw $zero, 592($t0)               
+                 sw $zero, 724($t0)        
+                 sw $zero, 716($t0) 
+                 sw $zero, 468($t0)
+                 # draw the frown
+                 sw $zero, 1084($t0)
+                 sw $zero, 1088($t0)
+                 sw $zero, 1092($t0)
+                 sw $zero, 1224($t0)
+                 sw $zero, 1208($t0) 
+                 sw $zero, 1356($t0) 
+                 sw $zero, 1332($t0)
+                 
+                 # draw gg 
+                 sw $t6, 1964($t0)
+                 sw $t6, 1968($t0)
+                 sw $t6, 1972($t0)
+                 sw $t6, 2088($t0)
+                 sw $t6, 2216($t0)
+                 sw $t6, 2344($t0)
+                 sw $t6, 2472($t0)
+                 sw $t6, 2604($t0)
+                 sw $t6, 2608($t0)
+                 sw $t6, 2612($t0)
+                 sw $t6, 2488($t0)
+                 sw $t6, 2360($t0)
+                 sw $t6, 2356($t0)
+                 sw $t6, 2364($t0)
+                 sw $t6, 1992($t0)
+                 sw $t6, 1996($t0)
+                 sw $t6, 2000($t0)
+                 sw $t6, 2116($t0)
+                 sw $t6, 2244($t0)
+                 sw $t6, 2372($t0)
+                 sw $t6, 2500($t0)
+                 sw $t6, 2632($t0)
+                 sw $t6, 2636($t0)
+                 sw $t6, 2640($t0)
+                 sw $t6, 2516($t0)
+                 sw $t6, 2388($t0)
+                 sw $t6, 2384($t0)
+                 sw $t6, 2392($t0)   
+                                                   
+                 jr $ra
 
-paint_sky: lw $t4, displayAddress  # initialize t4 which stores the address for the pixel of the background that we are currently painting 
+draw_ones_zero: addi $t6, $zero, 0 # colour for digits                 	 
+                 sw $t6, 4084($t0) 
+                 sw $t6, 3956($t0) 
+                 sw $t6, 3828($t0)               
+                 sw $t6, 3700($t0)     
+                 
+                 jr $ra
+              
+draw_sky: lw $t4, displayAddress  # initialize t4 which stores the address for the pixel of the background that we are currently drawing 
  next_sky: beq $t4, 268472320, sky_done #268472320 from display address plus 4096 (32 rows times 32 4 byte colours per row) 
-           sw $t1, 0($t4) # paint this address' pixel deep sky blue
+           sw $t1, 0($t4) # draw this address' pixel deep sky blue
            addi $t4, $t4, 4 # update the address in t4 to the next pixel
            j next_sky
  sky_done: jr $ra
                                   	
-paint_random_platform: li $v0, 42 # randomly generate the row of the platform
+draw_random_platform: li $v0, 42 # randomly generate the row of the platform
                        li $a0, 0
                        add $a1, $zero, $a2 # set how wide the range of the platforms is
                        syscall
@@ -256,7 +497,7 @@ paint_random_platform: li $v0, 42 # randomly generate the row of the platform
                        mflo $t7 # move the column multiplied by the column multiplier into t7 
                        add $t8, $t7, $t8 # add the final column and row result to get the platform starting pixel
                        add $t8, $t0, $t8 # add the platform starting pixel to the display address
-                       sw $t3, 0($t8) # paint the platform
+                       sw $t3, 0($t8) # draw the platform
                        sw $t3, 4($t8) 
                        sw $t3, 8($t8)
                        sw $t3, 12($t8)
@@ -278,6 +519,9 @@ check_plat_collision: addi $t6, $zero, 28 # store offset for doodler left foot
                       bgt $t7, $zero, no_plat_collision # dont count the collision if doodler still has jump time left 
                       addi $t6, $zero, 15 # put newly reset jump time into t6 
                       sw $t6, jumpTime # reset jumpTime to 15 
+                      lw $t6, score
+                      addi $t6, $t6, 1
+                      sw $t6, score
                       jr $ra # jump to return address if already collided 
                  
                    #repeat above instructions for doodler right foot     
@@ -292,6 +536,9 @@ no_left_plat_collision: addi $t6, $zero, 32
                         bgt $t7, $zero, no_plat_collision  # dont count the collision if doodler still has jump time left
                         addi $t6, $zero, 15
                         sw $t6, jumpTime
+                        lw $t6, score
+                        addi $t6, $t6, 1
+                        sw $t6, score
                         jr $ra # already collided so return  
      
 no_plat_collision: lw $t6, jumpTime # decrease jump time by one, this is intended if the doodler was jumping up and didn't collide with a platform
@@ -474,7 +721,7 @@ update_platform_check: addi $t6, $zero, 28
                        sw $t7, doodlerArray($t6)
                        addi $t6, $t6, 4
                        
-                       # move each platform down one row and paint over the old platform locations  
+                       # move each platform down one row and draw over the old platform locations  
                        lw $t6, platformOne
                        addi $t6, $t6, 128 # temporarily add 1 row to the platform to see if it would be 6 rows away from the top
                        addi $t8, $zero, 8
@@ -615,7 +862,7 @@ redraw_screen: addi $sp, $sp, -4
                sw $ra, 0($sp) 
                addi $t7, $zero, 0 # store the index of the doodler array in t7
                lw $t6, doodlerArray($t7) # load the current left head address of the doodler into t6
-               sw $t2, 0($t6) # paint the doodler left foot 
+               sw $t2, 0($t6) # draw the doodler left foot 
                addi $t7, $t7, 4 # move to the next body part of the doodler in the doodler array and repeat the process
                lw $t6, doodlerArray($t7)
                sw $t2, 0($t6)
@@ -640,7 +887,7 @@ redraw_screen: addi $sp, $sp, -4
                addi $t7, $t7, 4
                lw $t6, doodlerArray($t7)
                sw $t2, 0($t6)
-               # paint all the platforms
+               # draw all the platforms
                lw $t6, platformOne
                sw $t3, 0($t6)
                sw $t3, 4($t6)
@@ -677,6 +924,13 @@ redraw_screen: addi $sp, $sp, -4
                addi $sp, $sp, 4
                jr $ra
 
-Exit:
+Exit:          jal draw_end_screen
+Ending:        lw $t8, 0xffff0000 # load whether the key was pressed, 1 if pressed, 0 if no
+               beq $t8, 1, restart_check # if a key was pressed check if it was the start button
+               j Ending # if no key pressed, keep waiting for key press
+restart_check: lw $t7, 0xffff0004 # load the ascii code of the pressed key if any        
+               beq $t7, 115, restart # restart game if restart key is pressed
+               j Ending # keep waiting until user presses restart key or closes program
+
 li $v0, 10 # terminate the program gracefully
 syscall
