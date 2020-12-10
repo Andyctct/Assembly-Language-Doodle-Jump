@@ -14,7 +14,7 @@
 #
 # Which milestone is reached in this submission?
 # (See the assignment handout for descriptions of the milestones)
-# - Milestone 3
+# - Milestone 4
 #
 # Which approved additional features have been implemented?
 # (See the assignment handout for the list of additional features)
@@ -24,13 +24,15 @@
 # ... (add more if necessary)
 #
 # Any additional information that the TA needs to know:
-# - (write here, if any)
+# - 
 #
 #####################################################################
 
 #TODO
 # Maybe add more randomness to platform generator
 # Maybe change offbound action to same row wrapping
+# Maybe change scoring algorithm? Current algorithm counts platforms landed on, can abuse by staying on one platform. Other option is 
+# number of platforms that disappear off the map, downside is score will never be 0, 1, or 2 because of the initial up movement.
 
 .data
 	displayAddress: .word 0x10008000 # top left pixel  
@@ -390,11 +392,11 @@ draw_start_screen: lw $t4, displayAddress  # initialize t4 which stores the addr
                    
 draw_end_screen: lw $t4, displayAddress  # initialize t4 which stores the address for the pixel of the background that we are currently drawing 
                  addi $t6, $zero, 0xB81818 
- next_pixel_end: beq $t4, 268472320, ending_images #268472320 from display address plus 4096 (32 rows times 32 4 byte colours per row) 
+ next_pixel_end: beq $t4, 268472320, Ending_images #268472320 from display address plus 4096 (32 rows times 32 4 byte colours per row) 
                  sw $t6, 0($t4) # draw this address' pixel deep sky blue
                  addi $t4, $t4, 4 # update the address in t4 to the next pixel
                  j next_pixel_end
-  ending_images: # draw a greyed out starting doodler
+  Ending_images: # draw a greyed out starting doodler
                  addi $t6, $zero, 0xC8B9AA                  	 
                  sw $t6, 3644($t0) # draw the starting position doodler left head
                  # pattern repeats for every part of the doodler
@@ -407,7 +409,7 @@ draw_end_screen: lw $t4, displayAddress  # initialize t4 which stores the addres
                  sw $t6, 4028($t0) # doodler left foot
                  sw $t6, 4036($t0) # doodler right foot
                  
-                 # draw the ending background, death face and gg 
+                 # draw the Ending background, death face and gg 
                  addi $t6, $zero, 0xE7CD14 # colour for gg
                  # draw the x eyes
                  sw $zero, 436($t0)
@@ -460,15 +462,269 @@ draw_end_screen: lw $t4, displayAddress  # initialize t4 which stores the addres
                  sw $t6, 2392($t0)   
                                                    
                  jr $ra
-
-draw_ones_zero: addi $t6, $zero, 0 # colour for digits                 	 
-                 sw $t6, 4084($t0) 
-                 sw $t6, 3956($t0) 
-                 sw $t6, 3828($t0)               
-                 sw $t6, 3700($t0)     
                  
-                 jr $ra
-              
+draw_ones_zero: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+                sw $t6, 4088($t0) 
+                sw $t6, 3960($t0) 
+                sw $t6, 3832($t0)               
+                sw $t6, 3704($t0)
+                sw $t6, 3576($t0)             	 
+                sw $t6, 3572($t0) 
+                sw $t6, 3568($t0)
+                sw $t6, 3696($t0)   
+                sw $t6, 3824($t0) 
+                sw $t6, 3952($t0)              
+                sw $t6, 4080($t0)     
+                sw $t6, 4084($t0)                 
+                jr $ra
+
+draw_ones_one: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+               sw $t6, 4084($t0) 
+               sw $t6, 3956($t0) 
+               sw $t6, 3828($t0)               
+               sw $t6, 3700($t0)
+               sw $t6, 3572($t0)                  
+               jr $ra
+
+draw_ones_two: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+               sw $t6, 4088($t0) 
+               sw $t6, 3832($t0)
+               sw $t6, 3828($t0)
+               sw $t6, 3824($t0)               
+               sw $t6, 3704($t0)
+               sw $t6, 3576($t0)             	 
+               sw $t6, 3572($t0) 
+               sw $t6, 3568($t0)
+               sw $t6, 3952($t0)              
+               sw $t6, 4080($t0)     
+               sw $t6, 4084($t0)                 
+               jr $ra
+               
+draw_ones_three: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+                 sw $t6, 4088($t0) 
+                 sw $t6, 3960($t0) 
+                 sw $t6, 3832($t0)
+                 sw $t6, 3828($t0)
+                 sw $t6, 3824($t0)               
+                 sw $t6, 3704($t0)
+                 sw $t6, 3576($t0)             	 
+                 sw $t6, 3572($t0) 
+                 sw $t6, 3568($t0)          
+                 sw $t6, 4080($t0)     
+                 sw $t6, 4084($t0)                 
+                 jr $ra               
+
+draw_ones_four: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+                sw $t6, 4088($t0) 
+                sw $t6, 3960($t0) 
+                sw $t6, 3832($t0)               
+                sw $t6, 3704($t0)
+                sw $t6, 3576($t0)             	  
+                sw $t6, 3568($t0)
+                sw $t6, 3696($t0)   
+                sw $t6, 3824($t0) 
+                sw $t6, 3828($t0)
+                jr $ra
+
+draw_ones_five: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+                sw $t6, 4088($t0) 
+                sw $t6, 3960($t0) 
+                sw $t6, 3832($t0)
+                sw $t6, 3828($t0)
+                sw $t6, 3824($t0)               
+                sw $t6, 3576($t0)             	 
+                sw $t6, 3572($t0) 
+                sw $t6, 3568($t0)
+                sw $t6, 3696($t0)          
+                sw $t6, 4080($t0)     
+                sw $t6, 4084($t0)                 
+                jr $ra               
+
+draw_ones_six: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+               sw $t6, 4088($t0) 
+               sw $t6, 3960($t0) 
+               sw $t6, 3832($t0)
+               sw $t6, 3828($t0)
+               sw $t6, 3824($t0)             
+               sw $t6, 3576($t0)             	 
+               sw $t6, 3572($t0) 
+               sw $t6, 3568($t0)
+               sw $t6, 3696($t0)
+               sw $t6, 3952($t0)          
+               sw $t6, 4080($t0)     
+               sw $t6, 4084($t0)                 
+               jr $ra    
+                         
+draw_ones_seven: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+                 sw $t6, 4088($t0) 
+                 sw $t6, 3960($t0) 
+                 sw $t6, 3832($t0)               
+                 sw $t6, 3704($t0)
+                 sw $t6, 3576($t0)             	 
+                 sw $t6, 3572($t0) 
+                 sw $t6, 3568($t0)             
+                 jr $ra                              
+
+draw_ones_eight: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+                 sw $t6, 4088($t0) 
+                 sw $t6, 3960($t0) 
+                 sw $t6, 3832($t0)
+                 sw $t6, 3828($t0)
+                 sw $t6, 3824($t0)        
+                 sw $t6, 3704($t0)     
+                 sw $t6, 3576($t0)             	 
+                 sw $t6, 3572($t0) 
+                 sw $t6, 3568($t0)
+                 sw $t6, 3696($t0)
+                 sw $t6, 3952($t0)          
+                 sw $t6, 4080($t0)     
+                 sw $t6, 4084($t0)                 
+                 jr $ra    
+ 
+draw_ones_nine: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+                sw $t6, 4088($t0) 
+                sw $t6, 3960($t0) 
+                sw $t6, 3832($t0)
+                sw $t6, 3828($t0)
+                sw $t6, 3824($t0)        
+                sw $t6, 3704($t0)     
+                sw $t6, 3576($t0)             	 
+                sw $t6, 3572($t0) 
+                sw $t6, 3568($t0)
+                sw $t6, 3696($t0)                         
+                jr $ra   
+
+draw_tens_zero: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+                sw $t6, 4072($t0) 
+                sw $t6, 3944($t0) 
+                sw $t6, 3816($t0)               
+                sw $t6, 3688($t0)
+                sw $t6, 3560($t0)             	 
+                sw $t6, 3556($t0) 
+                sw $t6, 3552($t0)
+                sw $t6, 3680($t0)   
+                sw $t6, 3808($t0) 
+                sw $t6, 3936($t0)              
+                sw $t6, 4064($t0)     
+                sw $t6, 4068($t0)                 
+                jr $ra
+                
+draw_tens_one: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+               sw $t6, 4068($t0) 
+               sw $t6, 3940($t0) 
+               sw $t6, 3812($t0)               
+               sw $t6, 3684($t0)
+               sw $t6, 3556($t0)                  
+               jr $ra
+
+draw_tens_two: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+               sw $t6, 4072($t0) 
+               sw $t6, 3816($t0)
+               sw $t6, 3812($t0)
+               sw $t6, 3808($t0)               
+               sw $t6, 3688($t0)
+               sw $t6, 3560($t0)             	 
+               sw $t6, 3556($t0) 
+               sw $t6, 3552($t0)
+               sw $t6, 3936($t0)              
+               sw $t6, 4064($t0)     
+               sw $t6, 4068($t0)                 
+               jr $ra
+               
+draw_tens_three: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+                 sw $t6, 4072($t0) 
+                 sw $t6, 3944($t0) 
+                 sw $t6, 3816($t0)
+                 sw $t6, 3812($t0)
+                 sw $t6, 3808($t0)               
+                 sw $t6, 3688($t0)
+                 sw $t6, 3560($t0)             	 
+                 sw $t6, 3556($t0) 
+                 sw $t6, 3552($t0)          
+                 sw $t6, 4064($t0)     
+                 sw $t6, 4068($t0)                 
+                 jr $ra               
+
+draw_tens_four: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+                sw $t6, 4072($t0) 
+                sw $t6, 3944($t0) 
+                sw $t6, 3816($t0)               
+                sw $t6, 3688($t0)
+                sw $t6, 3560($t0)             	  
+                sw $t6, 3552($t0)
+                sw $t6, 3680($t0)   
+                sw $t6, 3808($t0) 
+                sw $t6, 3812($t0)
+                jr $ra
+
+draw_tens_five: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+                sw $t6, 4072($t0) 
+                sw $t6, 3944($t0) 
+                sw $t6, 3816($t0)
+                sw $t6, 3812($t0)
+                sw $t6, 3808($t0)               
+                sw $t6, 3560($t0)             	 
+                sw $t6, 3556($t0) 
+                sw $t6, 3552($t0)
+                sw $t6, 3680($t0)          
+                sw $t6, 4064($t0)     
+                sw $t6, 4068($t0)                 
+                jr $ra               
+
+draw_tens_six: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+               sw $t6, 4072($t0) 
+               sw $t6, 3944($t0) 
+               sw $t6, 3816($t0)
+               sw $t6, 3812($t0)
+               sw $t6, 3808($t0)             
+               sw $t6, 3560($t0)             	 
+               sw $t6, 3556($t0) 
+               sw $t6, 3552($t0)
+               sw $t6, 3680($t0)
+               sw $t6, 3936($t0)          
+               sw $t6, 4064($t0)     
+               sw $t6, 4068($t0)                 
+               jr $ra    
+                         
+draw_tens_seven: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+                 sw $t6, 4072($t0) 
+                 sw $t6, 3944($t0) 
+                 sw $t6, 3816($t0)               
+                 sw $t6, 3688($t0)
+                 sw $t6, 3560($t0)             	 
+                 sw $t6, 3556($t0) 
+                 sw $t6, 3552($t0)             
+                 jr $ra                              
+
+draw_tens_eight: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+                 sw $t6, 4072($t0) 
+                 sw $t6, 3944($t0) 
+                 sw $t6, 3816($t0)
+                 sw $t6, 3812($t0)
+                 sw $t6, 3808($t0)        
+                 sw $t6, 3688($t0)     
+                 sw $t6, 3560($t0)             	 
+                 sw $t6, 3556($t0) 
+                 sw $t6, 3552($t0)
+                 sw $t6, 3680($t0)
+                 sw $t6, 3936($t0)          
+                 sw $t6, 4064($t0)     
+                 sw $t6, 4068($t0)                 
+                 jr $ra    
+ 
+draw_tens_nine: addi $t6, $zero, 0x6F11B3 # colour for digits                 	 
+                sw $t6, 4072($t0) 
+                sw $t6, 3944($t0) 
+                sw $t6, 3816($t0)
+                sw $t6, 3812($t0)
+                sw $t6, 3808($t0)        
+                sw $t6, 3688($t0)     
+                sw $t6, 3560($t0)             	 
+                sw $t6, 3556($t0) 
+                sw $t6, 3552($t0)
+                sw $t6, 3680($t0)                         
+                jr $ra 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
 draw_sky: lw $t4, displayAddress  # initialize t4 which stores the address for the pixel of the background that we are currently drawing 
  next_sky: beq $t4, 268472320, sky_done #268472320 from display address plus 4096 (32 rows times 32 4 byte colours per row) 
            sw $t1, 0($t4) # draw this address' pixel deep sky blue
@@ -631,7 +887,7 @@ check_right_wall_collision: bne $a0, 12, no_wall_collision
          no_wall_collision: jr $ra                       
             wrap_left_head: addi $t5, $zero, 0 # index into left head
                             lw $t7, doodlerArray($t5) # load doodler body part address into t7 
-                            add $t7, $t7, $a3 # move body part up or down one row depending on argument
+                            add $t7, $t7, $a3 # move body part up or down one row depEnding on argument
                             sw $t7, doodlerArray($t5) # store updated body part
                             addi $t5, $t5, 28 # index into left foot and repeat          
                             lw $t7, doodlerArray($t5) 
@@ -924,7 +1180,81 @@ redraw_screen: addi $sp, $sp, -4
                addi $sp, $sp, 4
                jr $ra
 
-Exit:          jal draw_end_screen
+Exit:          jal draw_end_screen # draw game over screen
+               lw $t6, score # load score
+               addi $t7, $zero, 10
+               div $t6, $t7 # divide score by 10, quotient is tens digit, remainder is ones digit
+               mflo $t6 # store tens digit 
+               mfhi $t7 # store ones digit
+               
+               #determine which tens digit to draw
+               beq $t6, 0, zero_tens_score
+               beq $t6, 1, one_tens_score
+               beq $t6, 2, two_tens_score
+               beq $t6, 3, three_tens_score
+               beq $t6, 4, four_tens_score
+               beq $t6, 5, five_tens_score
+               beq $t6, 6, six_tens_score
+               beq $t6, 7, seven_tens_score
+               beq $t6, 8, eight_tens_score
+               beq $t6, 9, nine_tens_score
+               j Ending # if score exceeds limit, skip score display
+               
+check_ones_score: #determine which ones digit to draw
+                  beq $t7, 0, zero_ones_score
+                  beq $t7, 1, one_ones_score
+                  beq $t7, 2, two_ones_score
+                  beq $t7, 3, three_ones_score
+                  beq $t7, 4, four_ones_score
+                  beq $t7, 5, five_ones_score
+                  beq $t7, 6, six_ones_score
+                  beq $t7, 7, seven_ones_score
+                  beq $t7, 8, eight_ones_score
+                  beq $t7, 9, nine_ones_score
+               
+zero_tens_score:  jal draw_tens_zero
+                  j check_ones_score       
+one_tens_score:   jal draw_tens_one
+                  j check_ones_score
+two_tens_score:   jal draw_tens_two
+                  j check_ones_score
+three_tens_score: jal draw_tens_three
+                  j check_ones_score
+four_tens_score:  jal draw_tens_four
+                  j check_ones_score
+five_tens_score:  jal draw_tens_five
+                  j check_ones_score
+six_tens_score:   jal draw_tens_six
+                  j check_ones_score
+seven_tens_score: jal draw_tens_seven
+                  j check_ones_score
+eight_tens_score: jal draw_tens_eight
+                  j check_ones_score
+nine_tens_score:  jal draw_tens_nine
+                  j check_ones_score
+               
+zero_ones_score:  jal draw_ones_zero
+                  j Ending       
+one_ones_score:   jal draw_ones_one
+                  j Ending
+two_ones_score:   jal draw_ones_two
+                  j Ending
+three_ones_score: jal draw_ones_three
+                  j Ending
+four_ones_score:  jal draw_ones_four
+                  j Ending
+five_ones_score:  jal draw_ones_five
+                  j Ending
+six_ones_score:   jal draw_ones_six
+                  j Ending
+seven_ones_score: jal draw_ones_seven
+                  j Ending
+eight_ones_score: jal draw_ones_eight
+                  j Ending
+nine_ones_score:  jal draw_ones_nine
+                  j Ending
+
+                                                     
 Ending:        lw $t8, 0xffff0000 # load whether the key was pressed, 1 if pressed, 0 if no
                beq $t8, 1, restart_check # if a key was pressed check if it was the start button
                j Ending # if no key pressed, keep waiting for key press
