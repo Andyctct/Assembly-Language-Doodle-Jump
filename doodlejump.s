@@ -33,6 +33,7 @@
 # Maybe change offbound action to same row wrapping
 # Maybe change scoring algorithm? Current algorithm counts platforms landed on, can abuse by staying on one platform. Other option is 
 # number of platforms that disappear off the map, downside is score will never be 0, 1, or 2 because of the initial up movement.
+# Music that loops is veryyy buggy, aka main menu music loop or game over music loop 
 
 .data
 	displayAddress: .word 0x10008000 # top left pixel  
@@ -79,8 +80,15 @@
 	mflo $t6
 	add $t6, $t6, $t0
 	sw $t6, deathRow 
-
-restart:      jal draw_start_screen
+              
+restart:      #play bootup sound
+              li $a0, 60 
+              li $a1, 5000
+              li $a2, 106
+              li $a3, 100
+              li $v0, 31 
+              syscall
+              jal draw_start_screen
 start_screen: lw $t8, 0xffff0000 # load whether the key was pressed, 1 if pressed, 0 if no
               beq $t8, 1, start_check # if a key was pressed check if it was the start button
               j start_screen # keep checking for a key press
@@ -389,7 +397,269 @@ draw_start_screen: lw $t4, displayAddress  # initialize t4 which stores the addr
                    sw $t6, 1756($t0)
                                         
                    jr $ra
-                   
+
+ten_score_award_check: lw $t6, score
+                       beq $t6, 10, draw_ten_award # display the notif for 3 platforms worth of score
+                       beq $t6, 11, draw_ten_award
+                       beq $t6, 12, draw_ten_award
+                       beq $t6, 13, erase_ten_award # erase the notif after displaying it for 3 platforms worth of score
+                       jr $ra
+
+                       # draw out "Nice"
+                       # draw out N
+draw_ten_award:        addi $t6, $zero, 0x97792F # colour for notif 
+                       sw $t6, 956($t0)
+                       sw $t6, 1084($t0)
+                       sw $t6, 1212($t0)
+                       sw $t6, 1340($t0)
+                       sw $t6, 1088($t0)
+                       sw $t6, 1220($t0)
+                       sw $t6, 1352($t0)
+                       sw $t6, 1224($t0)
+                       sw $t6, 1096($t0)
+                       sw $t6, 968($t0)
+                       
+                       # draw out i
+                       sw $t6, 976($t0)
+                       sw $t6, 1232($t0)
+                       sw $t6, 1360($t0)
+                       
+                       # draw out c
+                       sw $t6, 1120($t0)
+                       sw $t6, 1116($t0)
+                       sw $t6, 1240($t0)
+                       sw $t6, 1372($t0)
+                       sw $t6, 1376($t0)
+                       
+                       # draw out e 
+                       sw $t6, 1392($t0)
+                       sw $t6, 1388($t0)
+                       sw $t6, 1256($t0)
+                       sw $t6, 1128($t0)
+                       sw $t6, 1132($t0)
+                       sw $t6, 1136($t0)
+                       sw $t6, 1008($t0)
+                       sw $t6, 876($t0)                     
+                       sw $t6, 1000($t0)
+                       
+                       #play achievement sound
+                       li $a0, 72 
+                       li $a1, 300
+                       li $a2, 102
+                       li $a3, 25
+                       li $v0, 31 
+                       syscall
+                       
+                       jr $ra
+                       
+erase_ten_award:       sw $t1, 956($t0)
+                       sw $t1, 1084($t0)
+                       sw $t1, 1212($t0)
+                       sw $t1, 1340($t0)
+                       sw $t1, 1088($t0)
+                       sw $t1, 1220($t0)
+                       sw $t1, 1352($t0)
+                       sw $t1, 1224($t0)
+                       sw $t1, 1096($t0)
+                       sw $t1, 968($t0)
+                       sw $t1, 976($t0)
+                       sw $t1, 1232($t0)
+                       sw $t1, 1360($t0)          
+                       sw $t1, 1120($t0)
+                       sw $t1, 1116($t0)
+                       sw $t1, 1240($t0)
+                       sw $t1, 1372($t0)
+                       sw $t1, 1376($t0)       
+                       sw $t1, 1392($t0)
+                       sw $t1, 1388($t0)
+                       sw $t1, 1256($t0)
+                       sw $t1, 1128($t0)
+                       sw $t1, 1132($t0)
+                       sw $t1, 1136($t0)
+                       sw $t1, 1008($t0)
+                       sw $t1, 876($t0)                     
+                       sw $t1, 1000($t0)
+                       jr $ra
+                       
+twentyfive_score_award_check: lw $t6, score
+                              beq $t6, 25, draw_twentyfive_award # display the notif for 3 platforms worth of score
+                              beq $t6, 26, draw_twentyfive_award
+                              beq $t6, 27, draw_twentyfive_award
+                              beq $t6, 28, erase_twentyfive_award # erase the notif after displaying it for 3 platforms worth of score
+                              jr $ra
+                       
+                              # draw out "WOW!"
+                              # draw out W
+draw_twentyfive_award:        addi $t6, $zero, 0x228F09 # colour for notif 
+                              sw $t6, 268($t0)
+                              sw $t6, 396($t0)
+                              sw $t6, 524($t0)
+                              sw $t6, 656($t0)
+                              sw $t6, 532($t0)
+                              sw $t6, 412($t0)
+                              sw $t6, 540($t0)
+                              sw $t6, 664($t0)
+                              sw $t6, 284($t0)
+                       
+                              # draw out O
+                              sw $t6, 548($t0)
+                              sw $t6, 420($t0)
+                              sw $t6, 296($t0)
+                              sw $t6, 300($t0)
+                              sw $t6, 432($t0)
+                              sw $t6, 560($t0)
+                              sw $t6, 684($t0)
+                              sw $t6, 680($t0)
+                              
+                              # draw out W
+                              sw $t6, 312($t0)
+                              sw $t6, 440($t0)
+                              sw $t6, 568($t0)
+                              sw $t6, 700($t0)
+                              sw $t6, 576($t0)
+                              sw $t6, 456($t0)
+                              sw $t6, 584($t0)
+                              sw $t6, 708($t0)
+                              sw $t6, 328($t0)
+                       
+                              # draw out ! 
+                              sw $t6, 336($t0)
+                              sw $t6, 464($t0)
+                              sw $t6, 720($t0)
+                              
+                              #play achievement sound
+                              li $a0, 78 
+                              li $a1, 300
+                              li $a2, 102
+                              li $a3, 25
+                              li $v0, 31 
+                              syscall
+                              
+                              jr $ra
+                       
+erase_twentyfive_award:       sw $t1, 268($t0)
+                              sw $t1, 396($t0)
+                              sw $t1, 524($t0)
+                              sw $t1, 656($t0)
+                              sw $t1, 532($t0)
+                              sw $t1, 412($t0)
+                              sw $t1, 540($t0)
+                              sw $t1, 664($t0)
+                              sw $t1, 284($t0)
+                              sw $t1, 548($t0)
+                              sw $t1, 420($t0)
+                              sw $t1, 296($t0)
+                              sw $t1, 300($t0)
+                              sw $t1, 432($t0)
+                              sw $t1, 560($t0)
+                              sw $t1, 684($t0)
+                              sw $t1, 680($t0)
+                              sw $t1, 312($t0)
+                              sw $t1, 440($t0)
+                              sw $t1, 568($t0)
+                              sw $t1, 700($t0)
+                              sw $t1, 576($t0)
+                              sw $t1, 456($t0)
+                              sw $t1, 584($t0)
+                              sw $t1, 708($t0)
+                              sw $t1, 328($t0)
+                              sw $t1, 336($t0)
+                              sw $t1, 464($t0)
+                              sw $t1, 720($t0)
+                              jr $ra
+
+fifty_score_award_check: lw $t6, score
+                         beq $t6, 50, draw_fifty_award # display the notif for 3 platforms worth of score
+                         beq $t6, 51, draw_fifty_award
+                         beq $t6, 52, draw_fifty_award
+                         beq $t6, 53, erase_fifty_award # erase the notif after displaying it for 3 platforms worth of score
+                         jr $ra
+
+                         # draw out "Pog"
+                         # draw out P
+draw_fifty_award:        addi $t6, $zero, 0xE04EA4 # colour for notif 
+                         sw $t6, 676($t0)
+                         sw $t6, 804($t0)
+                         sw $t6, 932($t0)
+                         sw $t6, 1060($t0)
+                         sw $t6, 1188($t0)
+                         sw $t6, 680($t0)
+                         sw $t6, 684($t0)
+                         sw $t6, 816($t0)
+                         sw $t6, 936($t0)
+                         sw $t6, 940($t0)
+                                          
+                         # draw out o
+                         sw $t6, 1080($t0)
+                         sw $t6, 952($t0)
+                         sw $t6, 828($t0)
+                         sw $t6, 832($t0)
+                         sw $t6, 964($t0)
+                         sw $t6, 1092($t0)
+                         sw $t6, 1216($t0)
+                         sw $t6, 1212($t0)
+                         
+                         # draw out g
+                         sw $t6, 1100($t0)
+                         sw $t6, 972($t0)
+                         sw $t6, 848($t0)
+                         sw $t6, 852($t0)
+                         sw $t6, 984($t0)
+                         sw $t6, 1112($t0)
+                         sw $t6, 1236($t0)
+                         sw $t6, 1232($t0)
+                         sw $t6, 1240($t0)
+                         sw $t6, 1368($t0)
+                         sw $t6, 1496($t0)
+                         sw $t6, 1620($t0)
+                         sw $t6, 1616($t0)
+                         sw $t6, 1484($t0)
+                         
+                         #play achievement sound
+                         li $a0, 84 
+                         li $a1, 300
+                         li $a2, 102
+                         li $a3, 25
+                         li $v0, 31 
+                         syscall
+                              
+                         jr $ra
+                       
+erase_fifty_award:       sw $t1, 676($t0)
+                         sw $t1, 804($t0)
+                         sw $t1, 932($t0)
+                         sw $t1, 1060($t0)
+                         sw $t1, 1188($t0)
+                         sw $t1, 680($t0)
+                         sw $t1, 684($t0)
+                         sw $t1, 816($t0)
+                         sw $t1, 936($t0)
+                         sw $t1, 940($t0)
+                         sw $t1, 1080($t0)
+                         sw $t1, 952($t0)
+                         sw $t1, 828($t0)
+                         sw $t1, 832($t0)
+                         sw $t1, 964($t0)
+                         sw $t1, 1092($t0)
+                         sw $t1, 1216($t0)
+                         sw $t1, 1212($t0)
+                         sw $t1, 1100($t0)
+                         sw $t1, 972($t0)
+                         sw $t1, 848($t0)
+                         sw $t1, 852($t0)
+                         sw $t1, 984($t0)
+                         sw $t1, 1112($t0)
+                         sw $t1, 1236($t0)
+                         sw $t1, 1232($t0)
+                         sw $t1, 1240($t0)
+                         sw $t1, 1368($t0)
+                         sw $t1, 1496($t0)
+                         sw $t1, 1620($t0)
+                         sw $t1, 1616($t0)
+                         sw $t1, 1484($t0)
+                         
+                         jr $ra
+                                                                                    
 draw_end_screen: lw $t4, displayAddress  # initialize t4 which stores the address for the pixel of the background that we are currently drawing 
                  addi $t6, $zero, 0xB81818 
  next_pixel_end: beq $t4, 268472320, Ending_images #268472320 from display address plus 4096 (32 rows times 32 4 byte colours per row) 
@@ -778,6 +1048,13 @@ check_plat_collision: addi $t6, $zero, 28 # store offset for doodler left foot
                       lw $t6, score
                       addi $t6, $t6, 1
                       sw $t6, score
+                      # play synth sound when doodler bounces off a platform
+                      li $a0, 84 
+                      li $a1, 800
+                      li $a2, 96
+                      li $a3, 25
+                      li $v0, 31 
+                      syscall
                       jr $ra # jump to return address if already collided 
                  
                    #repeat above instructions for doodler right foot     
@@ -795,6 +1072,13 @@ no_left_plat_collision: addi $t6, $zero, 32
                         lw $t6, score
                         addi $t6, $t6, 1
                         sw $t6, score
+                        # play synth sound when doodler bounces off a platform
+                        li $a0, 84 
+                        li $a1, 800
+                        li $a2, 96
+                        li $a3, 25
+                        li $v0, 31 
+                        syscall
                         jr $ra # already collided so return  
      
 no_plat_collision: lw $t6, jumpTime # decrease jump time by one, this is intended if the doodler was jumping up and didn't collide with a platform
@@ -1115,7 +1399,7 @@ platforms_check:          lw $t4, displayAddress # reload t4 with the display ad
                           jr $ra
 		                       
 redraw_screen: addi $sp, $sp, -4
-               sw $ra, 0($sp) 
+               sw $ra, 0($sp) # store the return address because we jump into functions and overwrite it here
                addi $t7, $zero, 0 # store the index of the doodler array in t7
                lw $t6, doodlerArray($t7) # load the current left head address of the doodler into t6
                sw $t2, 0($t6) # draw the doodler left foot 
@@ -1176,11 +1460,21 @@ redraw_screen: addi $sp, $sp, -4
                sw $t3, 16($t6)
                sw $t3, 20($t6)
                sw $t3, 24($t6)
+               jal ten_score_award_check # draw ten score award if player reaches ten score
+               jal twentyfive_score_award_check # draw twentyfive score award if player reaches twentyfive score
+               jal fifty_score_award_check # draw fifty score award if player reaches fifty score
                lw $ra, 0($sp)
                addi $sp, $sp, 4
                jr $ra
 
-Exit:          jal draw_end_screen # draw game over screen
+Exit:          # play synth sound when doodler dies
+               li $a0, 60 
+               li $a1, 2500
+               li $a2, 97
+               li $a3, 100
+               li $v0, 31 
+               syscall
+               jal draw_end_screen # draw game over screen
                lw $t6, score # load score
                addi $t7, $zero, 10
                div $t6, $t7 # divide score by 10, quotient is tens digit, remainder is ones digit
